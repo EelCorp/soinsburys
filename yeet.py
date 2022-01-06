@@ -5,7 +5,9 @@ import sys
 import tty
 import typing
 import termios
+from time import sleep
 from dataclasses import dataclass
+from escpos.printer import Usb
 from enum import Enum
 from functools import partial
 from pathlib import Path
@@ -160,3 +162,24 @@ if __name__ == "__main__":
         sum_cost = sum(item.total_cost for item in hs.items) + (data["slot_price"] / 2)
         table.add_row("[bold]TOTAL", "", f"[bold]£{sum_cost:.2f}")
         console.print(table)
+
+    pri = Usb(0x416,0x5011,profile="POS-5890", in_ep=0x81, out_ep=0x03)
+
+    for person, hs in state.items():
+        pri.image("eel.png", center=True)
+        pri.ln()
+
+        pri.set(font="a", align="center")
+        pri.textln(person.name)
+        pri.ln()
+        pri.set(font="b", align="left")
+        for item in hs.items:
+            pri.textln(f"{item.quantity} {item.name} £{item.total_cost:.2f}")
+
+        pri.set(font="a", align="center")
+        sum_cost = sum(item.total_cost for item in hs.items) + (data["slot_price"] / 2)
+        pri.ln()
+        pri.textln(f"Total cost: £{sum_cost:.2f}")
+        pri.print_and_feed(3)
+        print("Cut")
+        sleep(5)
